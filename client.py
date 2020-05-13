@@ -76,7 +76,14 @@ class Client:
                         data = data[(index + 1):]
                         # check what kind of message we got and put it in the appropriate queue
                         if status == "push":
-                            self.push_msgs.put(msg)
+                            # the server must send push messages of the form topic:message
+                            topic, msg = msg.split(":", 1)
+                            if topic == "newtrick":
+                                msg = msg.lower().split(",")[:-1]
+                            elif topic == "yourturn":
+                                self.turn = True
+                                continue
+                            self.push_msgs.put((topic, msg))
                         else:
                             self.response_msgs.put((status, msg))
 
@@ -91,11 +98,7 @@ class Client:
         return not self.push_msgs.empty()
 
     def get_newest_push(self):
-        # the server must send push messages of the form topic:message
-        topic, msg = self.push_msgs.get().split(":", 1)
-        if topic == "newtrick":
-            msg = msg.lower().split(",")[:-1]
-        return (topic, msg)
+        return self.push_msgs.get()
 
     def request_cards(self):
         """after a deal, request the new cards from the server
@@ -149,12 +152,15 @@ class Client:
         status, message = self._send_and_recv("play")
         if status == "ok":
             self._stage = []
+            self.turn = False
         else:
             raise TichuError(message)
 
     def pass_play(self):
         status, message = self._send_and_recv("pass")
-        if not status == "ok":
+        if status == "ok":
+            self.turn = False
+        else:
             raise TichuError(message)
 
 

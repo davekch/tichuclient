@@ -95,7 +95,7 @@ class Button(pg.Rect):
             if self.collidepoint(event.pos):
                 self.pressed = True
         elif event.type == pg.MOUSEBUTTONUP:
-            if self.pressed:
+            if self.pressed and self.enabled:
                 self.pressed = False
                 # call on_click on release of the button
                 if callable(self.on_click):
@@ -426,6 +426,14 @@ class TichuGui:
 
         while self.running:
             self.clock.tick(FRAMERATE)
+            # check if it's the player's turn
+            if self.client.turn:
+                self.buttons["play"].enabled = True
+                self.buttons["pass"].enabled = True
+            else:
+                self.buttons["play"].enabled = False
+                self.buttons["pass"].enabled = False
+
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     self.running = False
