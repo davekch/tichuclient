@@ -87,6 +87,16 @@ class Client:
         self._send(message)
         return self.response_msgs.get() # get response from the response-queue (blocking)
 
+    def has_push_msgs(self):
+        return not self.push_msgs.empty()
+
+    def get_newest_push(self):
+        # the server must send push messages of the form topic:message
+        topic, msg = self.push_msgs.get().split(":", 1)
+        if topic == "newtrick":
+            msg = msg.lower().split(",")[:-1]
+        return (topic, msg)
+
     def request_cards(self):
         """after a deal, request the new cards from the server
         """

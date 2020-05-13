@@ -1,6 +1,7 @@
 import pygame as pg
 from pygame.color import THECOLORS as COLORS
 import threading
+import random
 import os
 from functools import wraps
 from client import Client, TichuError
@@ -280,6 +281,14 @@ class CardArea:
             self.set_stage(self.callbackobject._stage)
 
 
+def table(cardnames):
+    x0, y0 = WIDTH / 2 - 60, 200
+    cards = []
+    for i, card in enumerate(cardnames):
+        cards.append(Card(x0 + i * 30, y0 + random.random() * 10 - 5, card))
+    return list(reversed(cards))
+
+
 class TichuGui:
     def __init__(self):
         self.client = Client()
@@ -288,6 +297,7 @@ class TichuGui:
         self.on_main = False
         self.threads = []
         self.buttons = []
+        self.table_cards = []
         self.error = None  # will contain error messages from server
 
         pg.init()
@@ -430,6 +440,18 @@ class TichuGui:
                         button.handle_event(event)
 
             self.screen.fill(C_BACKGROUND)
+
+            # check if there are new cards on the table that we should display
+            if self.client.has_push_msgs():
+                topic, msg = self.client.get_newest_push()
+                logger.debug("got a push msg: {}, {}".format(topic, msg))
+                if topic == "newtrick":
+                    self.table_cards = table(msg)
+
+            # draw cards on the table
+            for card in self.table_cards:
+                card.draw(self.screen)
+
             card_area.draw(self.screen)
             if self.error:
                 self.draw_error_window()
