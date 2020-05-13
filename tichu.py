@@ -296,7 +296,7 @@ class TichuGui:
         # this is true if all others are connected and the game is running
         self.on_main = False
         self.threads = []
-        self.buttons = []
+        self.buttons = {}
         self.table_cards = []
         self.error = None  # will contain error messages from server
 
@@ -318,9 +318,8 @@ class TichuGui:
                 self.error = str(e)
                 def on_ok():
                     self.error = None
-                    self.buttons.pop()
-                ok = Button(0, 0, 100, 40, "OK", on_click=on_ok)
-                self.buttons.append(ok)
+                    self.buttons.pop("error")
+                self.buttons["error"] = Button(0, 0, 100, 40, "OK", on_click=on_ok)
 
         return callback
 
@@ -331,10 +330,9 @@ class TichuGui:
         pg.draw.rect(self.screen, C_TEXT, background, 2)
         self.screen.blit(FONT.render("Error", True, C_TEXT), (x + 5, y + 5))
         self.screen.blit(FONT_SMALL.render(self.error, True, C_TEXT), (x + 5, y + 40))
-        # move last button (the ok button) to this "window"
-        # this code is utter bullshit
-        self.buttons[-1].x = x + 100
-        self.buttons[-1].y = y + 60
+        # move the error button to this "window"
+        self.buttons["error"].x = x + 100
+        self.buttons["error"].y = y + 60
 
     def login_screen(self):
         logged_in = False
@@ -416,18 +414,15 @@ class TichuGui:
             self.client.request_cards()
             card_area.set_hand(self.client._hand)
         # TODO: on_click: disable this button + error handling
-        take_hand_button = Button(50, 50, 180, 40, "take new cards", on_click=take_hand)
-        self.buttons.append(take_hand_button)
+        self.buttons["take"] = Button(50, 50, 180, 40, "take new cards", on_click=take_hand)
 
         # callback function for play_button
         @self.catch_server_error
         def play():
             self.client.play()
             card_area.set_stage(self.client._stage)
-        play_button = Button(card_area.stage.x + card_area.stage.width - 180, card_area.stage.y - 20, 150, 40, "play", on_click=play)
-        pass_button = Button(card_area.stage.x + card_area.stage.width - 380, card_area.stage.y - 20, 150, 40, "pass", on_click=self.catch_server_error(self.client.pass_play))
-        self.buttons.append(pass_button)
-        self.buttons.append(play_button)
+        self.buttons["play"] = Button(card_area.stage.x + card_area.stage.width - 180, card_area.stage.y - 20, 150, 40, "play", on_click=play)
+        self.buttons["pass"] = Button(card_area.stage.x + card_area.stage.width - 380, card_area.stage.y - 20, 150, 40, "pass", on_click=self.catch_server_error(self.client.pass_play))
 
         while self.running:
             self.clock.tick(FRAMERATE)
@@ -436,7 +431,7 @@ class TichuGui:
                     self.running = False
                 else:
                     card_area.handle_event(event)
-                    for button in self.buttons:
+                    for button in list(self.buttons.values()):
                         button.handle_event(event)
 
             self.screen.fill(C_BACKGROUND)
@@ -455,7 +450,7 @@ class TichuGui:
             card_area.draw(self.screen)
             if self.error:
                 self.draw_error_window()
-            for button in self.buttons:
+            for button in self.buttons.values():
                 button.draw(self.screen)
 
             pg.display.flip()
