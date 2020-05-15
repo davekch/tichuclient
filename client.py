@@ -25,6 +25,29 @@ class Client:
         self.push_msgs = Queue()
         self.response_msgs = Queue()
 
+    @property
+    def hand(self):
+        return self._hand
+
+    @hand.setter
+    def hand(self, h):
+        # save the original indices
+        self._hand = list(enumerate(h))
+
+    @hand.getter
+    def hand(self):
+        # the original indices are noone's business
+        return [c for _, c in self._hand]
+
+    @property
+    def stage(self):
+        return self._stage
+
+    @stage.getter
+    def stage(self):
+        # same as above
+        return [c for _, c in self._stage]
+
     def connect(self, username, ip="127.0.0.1", port=1001):
         self.remote_addr = (ip, port)
         self.username = username
@@ -106,50 +129,35 @@ class Client:
         status, message = self._send_and_recv("takecards")
         if status == "ok":
             # the message contains the cards seperated by comma (last one is empty)
-            self._hand = message.lower().split(",")[:-1]
+            self.hand = message.lower().split(",")[:-1]
         elif status == "err":
             raise TichuError(message)
 
-    def stage(self, i, j):
-        """move card i from hand to j in stage (locally and remotely)
+    def stage_card(self, i, j):
+        """move card i from hand to j in stage
         """
-        status, message = self._send_and_recv("stage {} {}".format(i, j))
-        if status == "ok":
-            self._stage.insert(j, self._hand.pop(i))
-        elif status == "err":
-            raise TichuError(message)
+        self._stage.insert(j, self._hand.pop(i))
 
-    def unstage(self, i, j):
+    def unstage_card(self, i, j):
         """reverse action to stage
         """
-        status, message = self._send_and_recv("unstage {} {}".format(i, j))
-        if status == "ok":
-            self._hand.insert(j, self._stage.pop(i))
-        elif status == "err":
-            raise TichuError(message)
+        self._hand.insert(j, self._stage.pop(i))
 
     def move_hand(self, i, j):
         """move card i in hand to j
         """
-        status, message = self._send_and_recv("mv_h {} {}".format(i, j))
-        if status == "ok":
-            self._hand.insert(j, self._hand.pop(i))
-        elif status == "err":
-            raise TichuError(message)
+        self._hand.insert(j, self._hand.pop(i))
 
     def move_stage(self, i, j):
         """move card i in stage to j
         """
-        status, message = self._send_and_recv("mv_s {} {}".format(i, j))
-        if status == "ok":
-            self._stage.insert(j, self._stage.pop(i))
-        elif status == "err":
-            raise TichuError(message)
+        self._stage.insert(j, self._stage.pop(i))
 
     def play(self):
         """submit the current stage to the table
         """
-        status, message = self._send_and_recv("play")
+        indices = [i for i, _ in self._stage]
+        status, message = self._send_and_recv("play {}".format(" ".join(map(str, indices))))
         if status == "ok":
             self._stage = []
             self.turn = False

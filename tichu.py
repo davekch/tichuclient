@@ -184,8 +184,8 @@ class CardArea:
         # depending on where the card is from
         self.dragged_card = None
         self.callbackmatrix = {
-            "hand": {"hand": callbackobject.move_hand, "stage": callbackobject.stage},
-            "stage": {"hand": callbackobject.unstage, "stage": callbackobject.move_stage},
+            "hand": {"hand": callbackobject.move_hand, "stage": callbackobject.stage_card},
+            "stage": {"hand": callbackobject.unstage_card, "stage": callbackobject.move_stage},
         }
         self.callbackobject = callbackobject
 
@@ -277,8 +277,8 @@ class CardArea:
             # call the callback
             self.callbackmatrix[sourcename][targetname](i, j)
             # update hand and stage
-            self.set_hand(self.callbackobject._hand)
-            self.set_stage(self.callbackobject._stage)
+            self.set_hand(self.callbackobject.hand)
+            self.set_stage(self.callbackobject.stage)
 
 
 def table(cardnames):
@@ -412,7 +412,7 @@ class TichuGui:
         @self.catch_server_error
         def take_hand():
             self.client.request_cards()
-            card_area.set_hand(self.client._hand)
+            card_area.set_hand(self.client.hand)
         # TODO: on_click: disable this button + error handling
         self.buttons["take"] = Button(50, 50, 180, 40, "take new cards", on_click=take_hand)
 
@@ -420,7 +420,7 @@ class TichuGui:
         @self.catch_server_error
         def play():
             self.client.play()
-            card_area.set_stage(self.client._stage)
+            card_area.set_stage(self.client.stage)
         self.buttons["play"] = Button(card_area.stage.x + card_area.stage.width - 180, card_area.stage.y - 20, 150, 40, "play", on_click=play)
         self.buttons["pass"] = Button(card_area.stage.x + card_area.stage.width - 380, card_area.stage.y - 20, 150, 40, "pass", on_click=self.catch_server_error(self.client.pass_play))
 
