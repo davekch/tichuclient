@@ -450,6 +450,8 @@ class TichuGui:
                 logger.debug("got a push msg: {}, {}".format(topic, msg))
                 if topic == "newtrick":
                     self.table_cards = table(msg)
+                elif topic == "cleartable":
+                    self.table_cards = []
 
             # draw cards on the table
             for card in self.table_cards:
