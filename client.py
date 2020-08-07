@@ -106,6 +106,8 @@ class Client:
                             elif topic == "yourturn":
                                 self.turn = True
                                 continue
+                            elif topic == "clearcards":
+                                self.delete_cards()
                             self.push_msgs.put((topic, msg))
                         else:
                             self.response_msgs.put((status, msg))
@@ -152,6 +154,12 @@ class Client:
         """move card i in stage to j
         """
         self._stage.insert(j, self._stage.pop(i))
+
+    def delete_cards(self):
+        """deletes all cards (after finished round)
+        """
+        self._stage = []
+        self._hand = []
 
     def play(self):
         """submit the current stage to the table
